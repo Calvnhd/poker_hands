@@ -11,7 +11,7 @@ class Odds():
         self.pair_two = False
         self.h = []
         self.d = []
-    def update_rs(self): # called by find_outs() separates h[] into (sorted) ranks[], unique ranks_u[], suits[], suits_set{}
+    def update_rs(self): # separates h[] into (sorted) ranks[], unique ranks_u[], suits[], unique suits_u[]
         self.ranks = []
         self.suits = []
         for i in range(len(self.h)):
@@ -19,12 +19,12 @@ class Odds():
             self.suits.append(self.h[i][1])
         self.ranks = sorted(self.ranks)
         self.ranks_u = sorted(list(set(self.ranks)))
-        self.suits_set = set(self.suits)
+        self.suits_u = list(set(self.suits))
     def update(self, h, d):
         self.h = h
         self.d = d
         if len(h) < 5:
-            self.update_rs()    # separates h[] into (sorted) self.ranks[], self.suits[], self.ranks_set{}, self.suits_set{}
+            self.update_rs()    # separates h[] into (sorted) ranks[], unique ranks_u[], suits[], unique suits_u[]
             self.count_dups()   # updates bools self.pair_one, self.pair_two, self.trips, self.quads
             self.update_outs_hit()  
             self.update_outs_safe()
@@ -86,10 +86,9 @@ class Odds():
                                 self.outs_hit[i].append(self.d.get_deck()[j])
             elif i == 4: # Straight
                 if len(self.h) == 4:
-                    ''
-                    ace_low = False
                     max_r = self.ranks[(len(self.ranks) - 1)]
                     min_r = self.ranks[0]
+                    ace_low = False
                     if self.ranks[(len(self.ranks) - 1)] == 14 and self.ranks[(len(self.ranks) - 2)] <= 5:
                         # consider Ace low
                         self.ranks[(len(self.ranks) - 1)] = 1
@@ -116,6 +115,17 @@ class Odds():
                     if ace_low:
                         self.ranks[0] = 14
                         self.ranks = sorted(self.ranks)
+            elif i == 5: # Flush
+                if len(self.h) == 4:
+                    if len(self.suits_u) == 1:
+                        for j in range(self.d.get_size()):
+                            if self.d.get_deck()[j][1] == self.suits_u[0]:
+                                found = False
+                                for k in range(len(self.h)):
+                                    if self.d.get_deck()[j] == self.h[k]:
+                                        found = True
+                                if not found:
+                                    self.outs_hit[i].append(self.d.get_deck()[j])    
 
     def update_outs_safe(self): # create a list of cards that would improve a hand for a given hand ranking 0 to 9 (high card to royal flush)
         self.outs_safe = [[],[],[],[],[],[],[],[],[],[]]
@@ -171,13 +181,13 @@ class Odds():
                             if self.d.get_deck()[j][0] <= 5:
                                 self.outs_safe[i].append(self.d.get_deck()[j])
                 elif len(self.h) > 1:
-                    print('STRAIGHT CHECK\n' + str(len(self.h)) +  ' cards dealt')
+                    # print('STRAIGHT CHECK\n' + str(len(self.h)) +  ' cards dealt')
                     ace_low = False
                     max_r = self.ranks[(len(self.ranks) - 1)]
                     min_r = self.ranks[0]
                     if self.ranks[(len(self.ranks) - 1)] == 14 and self.ranks[(len(self.ranks) - 2)] <= 5:
                         # consider Ace low
-                        print('Ace is low')
+                        # print('Ace is low')
                         self.ranks[(len(self.ranks) - 1)] = 1
                         self.ranks = sorted(self.ranks)
                         max_r = self.ranks[(len(self.ranks) - 1)]
@@ -185,10 +195,10 @@ class Odds():
                         ace_low = True
                     # check range and unique values
                     if len(self.ranks_u) == len(self.ranks) and (max_r - min_r) < 5:
-                        print('Cards are within a valid straight range')
+                        # print('Cards are within a valid straight range')
                         upper = min_r + 4
                         lower = max_r - 4
-                        print('lower: ' + str(lower) + ' upper: ' + str(upper) + ' for ranks ' + str(self.ranks))
+                        # print('lower: ' + str(lower) + ' upper: ' + str(upper) + ' for ranks ' + str(self.ranks))
                         j = lower
                         while j <= upper:
                             # print('looking for rank j = ' + str(j))
@@ -205,16 +215,20 @@ class Odds():
                             j += 1
                     # Convert Ace back to high for other functions
                     if ace_low:
-                        print('Setting Ace high again')
+                        # print('Setting Ace high again')
                         self.ranks[0] = 14
                         self.ranks = sorted(self.ranks)
+            elif i == 5: # Flush
+                if len(self.suits_u) == 1:
+                    for j in range(self.d.get_size()):
+                        if self.d.get_deck()[j][1] == self.suits_u[0]:
+                            found = False
+                            for k in range(len(self.h)):
+                                if self.d.get_deck()[j] == self.h[k]:
+                                    found = True
+                            if not found:
+                                 self.outs_safe[i].append(self.d.get_deck()[j])
 
-            # elif i == 5: # Flush
-            #     if len(self.suits_set) != 1:
-            #         self.chances[i] = 0
-            #         self.outs[i] = [0]
-            #     else:
-            #         self.chances[i] = (13 - len(h)) / len(d)
             # elif i == 6: # Full House
             #     if len(h) < 3:
             #         self.chances[i] = 1

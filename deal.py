@@ -25,6 +25,6 @@ while not done:
             eval = hands.evaluate_hand(h)
             print('Complete hand: ' + str(h) + ' ... ' + str(hands.interpret_eval(eval)) + '\n')
     i += 1
-    if eval[0] == 4 and eval[1] == 14:
+    if eval[0] == 5:
         done = True
 print('Finished after ' + str(i) + ' hands')
