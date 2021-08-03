@@ -127,17 +127,34 @@ class Odds():
                                 if not found:
                                     self.outs_hit[i].append(self.d.get_deck()[j])    
             elif i == 6: # Full House
-                if self.quads:
-                    pass
-                elif len(self.h) == 4: 
-                    if self.pair_one or self.pair_two:
-                        # get trip on either pair
-                        pass
-                    elif self.trips:
-                        # pair up single card
-                        pass
+                if not self.quads and len(self.h) == 4: 
+                    if len(self.ranks_u) == 2:  
+                        if not self.trips:
+                            # match either card to get trip on either pair
+                            for j in range(len(self.ranks_u)):
+                                for k in range(self.d.get_size()):
+                                    if self.d.get_deck()[k][0] == self.ranks_u[j]:
+                                        self.outs_hit[i].append(self.d.get_deck()[k])
+                        else:
+                            # pair up single card
+                            for j in range(len(self.ranks_u)):
+                                for k in range(self.d.get_size()):
+                                    if self.d.get_deck()[k][0] == self.ranks_u[j] and self.ranks_u[j] != self.trip_compare:
+                                        self.outs_hit[i].append(self.d.get_deck()[k])
             elif i == 7: # Quads
-                pass
+                if not self.quads:
+                    if self.trips:
+                        # quad up trips
+                        for k in range(self.d.get_size()):
+                            if self.trip_compare == self.d.get_deck()[k][0]:
+                                print('self.trip_compare: ' + str(self.trip_compare) + ' --- self.d.get_deck()[k][0]: ' + str(self.d.get_deck()[k][0]) + ' --- self.d.get_deck()[k]: ' + str(self.d.get_deck()[k]) )
+                                self.outs_hit[i].append(self.d.get_deck()[k])
+                    if len(self.h) == 4 and self.pair_two:
+                        # match either rank
+                        for j in range(len(self.ranks_u)):
+                            for k in range(self.d.get_size()):
+                                if self.ranks_u[j] == self.d.get_deck()[k][0]:
+                                    self.outs_hit[i].append(self.d.get_deck()[k])
             elif i == 8: # Straight Flush
                 pass
             elif i == 9: # Royal Flush
@@ -178,7 +195,6 @@ class Odds():
                             if self.ranks_u[j] == self.d.get_deck()[k][0]:
                                 self.outs_safe[i].append(self.d.get_deck()[k])
                 elif len(self.h) == 4:
-                    # must hit trip
                     self.outs_safe[i] = self.outs_hit[i]
             elif i == 4: # Straight
                 if len(self.h) == 1:
@@ -244,19 +260,25 @@ class Odds():
                             if not found:
                                  self.outs_safe[i].append(self.d.get_deck()[j])
             elif i == 6: # Full House
-                if len(self.h) <= 2 or self.quads:
+                if len(self.ranks_u) <= 1 or self.quads:
                     self.outs_safe[i] = self.d.get_deck()
-                elif len(self.h) == 3:
-                    if self.pair_one:
-                        # match any card in hard to trip up pair or pair up single
-                        pass
-                    elif self.trips:
-                        # any card for next pair
-                        self.outs_safe[i] = self.d.get_deck()
-                elif len(self.h) == 4:
+                elif len(self.h) == 4 and not self.trips:
                     self.outs_safe[i] = self.outs_hit[i]
+                elif len(self.ranks_u) == 2:
+                    # match either card
+                    for j in range(len(self.ranks_u)):
+                        for k in range(self.d.get_size()):
+                            if self.ranks_u[j] == self.d.get_deck()[k][0]:
+                                self.outs_safe[i].append(self.d.get_deck()[k])
             elif i == 7: # Quads
-                pass
+                if self.quads or len(self.ranks_u) == 1:
+                    self.outs_safe[i] = self.d.get_deck()
+                elif len(self.ranks_u) == 2:
+                    # match either rank
+                    for j in range(len(self.ranks_u)):
+                        for k in range(self.d.get_size()):
+                            if self.ranks_u[j] == self.d.get_deck()[k][0]:
+                                self.outs_safe[i].append(self.d.get_deck()[k])
             elif i == 8: # Straight Flush
                 pass
             elif i == 9: # Royal Flush
@@ -282,9 +304,10 @@ class Odds():
         self.pair_one = False
         self.pair_two = False
         self.pair_compare = 0
+        self.trip_compare = 0
+        self.pair_compare_two = 0
         # quad_compare = []
         # fh_compare = [0,0]
-        self.pair_compare_two = 0
         count = []
         # count duplicate cards
         for i in range(len(self.ranks_u)): 
@@ -304,7 +327,7 @@ class Odds():
                 # print('trips made')
                 self.trips = True
                 # fh_compare[0] = self.ranks_u[i]
-                # trip_compare = self.ranks_u[i]
+                self.trip_compare = self.ranks_u[i]
             elif count[i] == 2 and not self.pair_one:
                 # print('one pair made: ' + str(self.ranks_u[i]))
                 self.pair_one = True
