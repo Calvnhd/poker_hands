@@ -126,7 +126,22 @@ class Odds():
                                         found = True
                                 if not found:
                                     self.outs_hit[i].append(self.d.get_deck()[j])    
-
+            elif i == 6: # Full House
+                if self.quads:
+                    pass
+                elif len(self.h) == 4: 
+                    if self.pair_one or self.pair_two:
+                        # get trip on either pair
+                        pass
+                    elif self.trips:
+                        # pair up single card
+                        pass
+            elif i == 7: # Quads
+                pass
+            elif i == 8: # Straight Flush
+                pass
+            elif i == 9: # Royal Flush
+                pass
     def update_outs_safe(self): # create a list of cards that would improve a hand for a given hand ranking 0 to 9 (high card to royal flush)
         self.outs_safe = [[],[],[],[],[],[],[],[],[],[]]
         for i in range(len(self.outs_safe)):
@@ -228,61 +243,29 @@ class Odds():
                                     found = True
                             if not found:
                                  self.outs_safe[i].append(self.d.get_deck()[j])
-
-            # elif i == 6: # Full House
-            #     if len(h) < 3:
-            #         self.chances[i] = 1
-            #     elif len(h) == 3:
-            #         if self.trips:
-            #             self.chances[i] = 1
-            #             self.outs[i] = d
-            #         elif self.pair_one:
-            #             pass
-            #         else:
-            #             self.chances[i] = 0
-            #             self.outs[i] = 0
-            #     elif len(h) == 4:
-            #         if self.quads:
-            #             self.chances[i] = -1
-            #             self.outs[i] =  [-1]
-            #         elif self.trips:
-            #             pass
-            #         elif self.pair_two:
-            #             pass
-            #         else:
-            #             self.chances[i] = 0
-            #             self.outs[i] = [0]
-            # elif i == 7: # Quads
-            #     if len(h) <= 1:
-            #         self.chances[i] = 1
-            #         self.outs[i] = d[:]
-            #     elif len(self.ranks_set) >= 3:
-            #         self.chances[i] = 0
-            #         self.outs[i] = [0]
-            #     elif self.quads: 
-            #         self.chances[i] = 0
-            #         self.outs[i] = [0]
-            #     elif len(h) == 2:
-            #         pass
-            #     elif len(h) == 3:
-            #         pass
-            #     elif len(h) == 4:
-            #         pass
-            # elif i == 8: # Straight Flush
-            #     if len(self.suits_set) != 1:
-            #         self.chances[i] = 0
-            #     else:
-            #         pass
-            # elif i == 9: # Royal Flush
-            #     royal_ranks = True
-            #     for j in range(len(self.ranks)):
-            #         if self.ranks[j] < 10:
-            #             royal_ranks = False
-            #             break
-            #     if royal_ranks and len(self.suits_set) == 1:
-            #         self.chances[i] = (5 - len(h)) / d.get_size()
-            #     else:
-            #         self.chances[i] = 0
+            elif i == 6: # Full House
+                if len(self.h) <= 2 or self.quads:
+                    self.outs_safe[i] = self.d.get_deck()
+                elif len(self.h) == 3:
+                    if self.pair_one:
+                        # match any card in hard to trip up pair or pair up single
+                        pass
+                    elif self.trips:
+                        # any card for next pair
+                        self.outs_safe[i] = self.d.get_deck()
+                elif len(self.h) == 4:
+                    self.outs_safe[i] = self.outs_hit[i]
+            elif i == 7: # Quads
+                pass
+            elif i == 8: # Straight Flush
+                pass
+            elif i == 9: # Royal Flush
+                royal_ranks = True
+                for j in range(len(self.ranks_u)):
+                    if self.ranks_u[j] < 10:
+                        royal_ranks = False
+                if royal_ranks and len(self.suits_u) == 1:
+                    pass
     def update_outs_count(self):
         pass
     # def get_possible(self):
