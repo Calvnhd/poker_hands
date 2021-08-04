@@ -45,4 +45,28 @@ class Deck:
     def info(self):             # Print number of cards remaining & removed
         info = 'Number of cards...\nRemaining: ' + str(len(self.deck)) + '\nRemoved: ' + str(len(self.removed))
         return info
+    def bias_deck(self, n):
+        self.shuffle()
+        h = []
+        i = 0
+        suit = 'x' 
+        if n == 9:
+            r = [14, 11, 12, 13, 10]
+            suit = 'H'
+        elif n == 8:
+            suit = 'H'
+            r = [14,  4,  5,  2,  3] 
+        i = 0
+        while len(h) < 5:
+            if i == len(self.deck):
+                i = 0
+            if self.deck[i][1] == suit or suit == 'x':
+                for j in range(len(r)):
+                    if self.deck[i][0] == r[j]:
+                        h.append(self.deck.pop(i))
+            i += 1
+        h.extend(self.deck)
+        self.deck = h[:]
+
+
 
