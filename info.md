@@ -3,9 +3,7 @@
 * Deals 5 cards from a deck one by one, and calculates the chances of hitting a poker hand.  Includes lists of cards to stay safe or to hit a given hand.
 
 ## To do
-* Extend to 7 cards (Texas Hold'em)
+* Extend to 7 cards (Texas Hold'em) -- edit outs_safe and outs_hit
 * Combine / clean up output
+** Cards to hit, cards safe, hands made / superceded / no longer possible
 * Add graphics
-
-## Dealer (main)
-* draws a card from deck.  Uses that cards to update hands.

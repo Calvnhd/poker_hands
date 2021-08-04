@@ -23,15 +23,17 @@ class Odds():
     def update(self, h, d):
         self.h = h
         self.d = d
-        if len(h) < 5:
-            self.update_rs()    # separates h[] into (sorted) ranks[], unique ranks_u[], suits[], unique suits_u[]
-            self.count_dups()   # updates bools self.pair_one, self.pair_two, self.trips, self.quads
-            self.update_outs_hit()  
-            self.update_outs_safe()
-            self.update_chances()
-            self.combine_info()
+        if len(h) <= 7:
+            self.update_rs()        # separates h[] into (sorted) ranks[], unique ranks_u[], suits[], unique suits_u[]
+            self.count_dups()       # updates bools self.pair_one, self.pair_two, self.trips, self.quads
+            self.update_outs_hit()  # Creates list of cards to hit a hand on next card
+            self.update_outs_safe() # Creates list of cards to stay safe for a hand on next card
+            self.update_chances()   # Gets the probability to stay safe or hit on next card (2 separate lists)
+            # self.combine_info()
+        else:
+            print('MAX CARDS REACHED')
     def combine_info(self):
-        print('Chances for hand: ' + str(self.h) + ' with ' + str(self.d.get_size()) + ' cards remaining in deck')
+        # print('Chances for hand: ' + str(self.h) + ' with ' + str(self.d.get_size()) + ' cards remaining in deck')
         o_hit = self.outs_hit[:]
         o_safe = self.outs_safe[:]
         c_hit = self.chances_hit[:]
@@ -80,7 +82,7 @@ class Odds():
                 if self.pair_one or self.pair_two or self.trips or self.quads:
                     # already hit
                     pass
-                elif len(self.h) <= 4:
+                elif len(self.h) <= 6:
                     # pair up any card in hand
                     for j in range(len(self.ranks)):
                         for k in range(self.d.get_size()):
@@ -90,7 +92,7 @@ class Odds():
                 if self.pair_two or self.trips or self.quads:
                     # already hit
                     pass
-                elif len(self.h) <= 4 and self.pair_one:
+                elif len(self.h) <= 6 and self.pair_one:
                     for j in range(len(self.ranks)):
                         for k in range(self.d.get_size()):
                             if self.d.get_deck()[k][0] == self.ranks[j] and self.d.get_deck()[k][0] != self.pair_compare:
@@ -236,23 +238,23 @@ class Odds():
                 # all cards are safe
                 self.outs_safe[i] = self.d.get_deck()
             elif i == 1: # Pair
-                if self.pair_one or self.pair_two or self.trips or self.quads or (len(self.h) < 4):
-                    # already hit.  Everything is safe.
+                if self.pair_one or self.pair_two or self.trips or self.quads or (len(self.h) < 6):
+                    # already hit or more to come.  Everything is safe.
                     self.outs_safe[i] = self.d.get_deck()
-                elif len(self.h) == 4:
+                elif len(self.h) == 6:
                     # must hit on final card
                     self.outs_safe[i] = self.outs_hit[i]
             elif i == 2: # Two pair
-                if self.pair_two or self.trips or self.quads or (len(self.h) < 3) or (self.pair_one and len(self.h) == 3):
-                    # Already hit, or at least two more cards to come, .  Everything safe.
+                if self.pair_two or self.trips or self.quads or (len(self.h) < 5) or (self.pair_one and len(self.h) == 5):
+                    # Already hit, or at least two more cards to come.  Everything safe.
                     self.outs_safe[i] = self.d.get_deck()
-                elif len(self.h) == 3:
+                elif len(self.h) == 5:
                     # must pair up two of the (unpaired) cards on board
                     for j in range(len(self.ranks)):
                         for k in range(self.d.get_size()):
                             if self.d.get_deck()[k][0] == self.ranks[j] and self.d.get_deck()[k][0] != self.pair_compare:
                                 self.outs_safe[i].append(self.d.get_deck()[k])
-                elif len(self.h) == 4:
+                elif len(self.h) == 6:
                     # must hit on final card
                     self.outs_safe[i] = self.outs_hit[i]
             elif i == 3: # Trips
@@ -587,7 +589,7 @@ class Odds():
 # Need to update to compare value of same hands
 def evaluate_hand(hand):
     if not (len(hand) == 5):
-        print('ERROR COMPARING HANDS for hand: ' + str(hand))
+        print('ERROR EVALUATING HAND for hand: ' + str(hand))
         return -1
     # Bool for making a hand
     quads = False
@@ -777,7 +779,6 @@ def make_hands(H, B):
     if len(H) + len(B) < 5:
         print('ERROR! Not enough cards on board to make_hands')
         return -1
-
     h = []
     b = []
     best = []
