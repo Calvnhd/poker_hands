@@ -28,25 +28,45 @@ class Odds():
             self.count_dups()   # updates bools self.pair_one, self.pair_two, self.trips, self.quads
             self.update_outs_hit()  
             self.update_outs_safe()
-            # self.update_poss()
             self.update_chances()
-            self.update_outs_count()
-    # def update_poss(self):
-    #     for i in range(len(self.poss)):
-    #         if self.chances[i] > 0:
-    #             self.poss[i] = True
-    #         else:
-    #             self.poss[i] = False
+            self.combine_info()
+    def combine_info(self):
+        print('Chances for hand: ' + str(self.h) + ' with ' + str(self.d.get_size()) + ' cards remaining in deck')
+        o_hit = self.outs_hit[:]
+        o_safe = self.outs_safe[:]
+        c_hit = self.chances_hit[:]
+        c_safe = self.chances_safe[:]
+        for i in range(len(o_hit)):
+            if i == 0:
+                pass
+            if i == 1:
+                pass
+            if i == 2:
+                pass
+            if i == 3:
+                pass
+            if i == 4:
+                pass
+            if i == 5:
+                pass
+            if i == 6:
+                pass
+            if i == 7:
+                pass
+            if i == 8:
+                pass
+            if i == 9:
+                pass
     def update_chances(self):
-        print('CALCULATING CHANCES for hand: ' + str(self.h) + ' with ' + str(self.d.get_size()) + ' cards remaining in deck')
-        print('*** SAFE ***')
+        # print('Chances for hand: ' + str(self.h) + ' with ' + str(self.d.get_size()) + ' cards remaining in deck')
+        # print('*** SAFE ***')
         for i in range(len(self.chances_safe)):
             self.chances_safe[i] = round(len(self.outs_safe[i]) / self.d.get_size(),2)
-            print('i: ' + str(i) + ' ... len(self.outs_safe[i]): ' + str(len(self.outs_safe[i])) + ' ... self.chances_safe[i]: ' + str(self.chances_safe[i]) )
-        print('*** HIT  ***')
+            # print('i: ' + str(i) + ' ... len(self.outs_safe[i]): ' + str(len(self.outs_safe[i])) + ' ... self.chances_safe[i]: ' + str(self.chances_safe[i]) )
+        # print('*** HIT  ***')
         for i in range(len(self.chances_hit)):
             self.chances_hit[i] = round(len(self.outs_hit[i]) / self.d.get_size(),2)
-            print('i: ' + str(i) + ' ... len(self.outs_hit[i]):  ' + str(len(self.outs_hit[i])) + ' ... self.chances_hit[i]: ' + str(self.chances_hit[i]) )
+            # print('i: ' + str(i) + ' ... len(self.outs_hit[i]):  ' + str(len(self.outs_hit[i])) + ' ... self.chances_hit[i]: ' + str(self.chances_hit[i]) )
     def update_outs_hit(self): # create a list of cards that would improve a hand for a given hand ranking 0 to 9 (high card to royal flush)
         self.outs_hit = [[],[],[],[],[],[],[],[],[],[]]
         for i in range(len(self.outs_hit)):
@@ -407,10 +427,6 @@ class Odds():
                                         if self.d.get_deck()[k][0] == j:
                                             self.outs_safe[i].append(self.d.get_deck()[k])
                             j += 1
-    def update_outs_count(self):
-        pass
-    # def get_possible(self):
-    #     return self.poss
     def get_chances_safe(self):
         return self.chances_safe
     def get_chances_hit(self):
