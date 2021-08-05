@@ -107,7 +107,8 @@ class Odds():
                             if self.d.get_deck()[j][0] == self.pair_compare or self.d.get_deck()[j][0] == self.pair_compare_two:
                                 self.outs_hit[i].append(self.d.get_deck()[j])
             elif i == 4: # Straight
-                if len(self.h) == 4:
+                # this whole thing needs redoing.  Maybe from your old count_outs code.
+                if len(self.h) >= 4:
                     max_r = self.ranks[(len(self.ranks) - 1)]
                     min_r = self.ranks[0]
                     ace_low = False
@@ -258,45 +259,79 @@ class Odds():
                     # must hit on final card
                     self.outs_safe[i] = self.outs_hit[i]
             elif i == 3: # Trips
-                if self.trips or self.quads or len(self.h) < 3 or (len(self.h) == 3 and self.pair_one):
+                if self.trips or self.quads or len(self.h) < 5 or (len(self.h) == 5 and self.pair_one):
+                    # already hit, or sufficient cards to come
                     self.outs_safe[i] = self.d.get_deck()
-                elif len(self.h) == 3:
+                elif len(self.h) == 5:
                     # must pair up any single cards, or hit trip on current pair
                     for j in range(len(self.ranks_u)):
                         for k in range(self.d.get_size()):
                             if self.ranks_u[j] == self.d.get_deck()[k][0]:
                                 self.outs_safe[i].append(self.d.get_deck()[k])
-                elif len(self.h) == 4:
+                elif len(self.h) == 6:
                     self.outs_safe[i] = self.outs_hit[i]
             elif i == 4: # Straight
-                if len(self.h) == 1:
-                    # 5 up and down
-                    lower = self.ranks[0] - 4
-                    upper = self.ranks[0] + 4
-                    # print('STRAIGHT CHECK\nOnly one card dealt')
-                    # print('lower: ' + str(lower) + ' upper: ' + str(upper) + ' for ranks ' + str(self.ranks))
-                    for j in range(self.d.get_size()):
-                        r = self.d.get_deck()[j][0]
-                        if r >= lower and r <= upper and r != self.ranks[0] or (lower <= 1 and r == 14):
-                            self.outs_safe[i].append(self.d.get_deck()[j])
-                    if self.ranks[0] == 14:
-                        for j in range(self.d.get_size()):
-                            if self.d.get_deck()[j][0] <= 5:
-                                self.outs_safe[i].append(self.d.get_deck()[j])
-                elif len(self.h) > 1:
-                    # print('STRAIGHT CHECK\n' + str(len(self.h)) +  ' cards dealt')
-                    ace_low = False
+                if len(self.h) <= 2 or self.quads:
+                    # 5 or more cards yet to come.  Any card safe 
+                    self.outs_safe[i] = self.d.get_deck()
+                elif len(self.h) == 3:
+                    # must get a card that is 4 up or down from any card.  Dups & consecs restrict this range.  
                     max_r = self.ranks[(len(self.ranks) - 1)]
                     min_r = self.ranks[0]
+                    if len(self.ranks_u) == 1: # trip
+                        lower = self.ranks_u[0] - 4
+                        upper = self.ranks_u[0] + 4                     
+                        for j in range(self.d.get_size()):
+                            r = self.d.get_deck()[j][0]
+                            # card must be in range. Duplicate of trip create quads (still safe)
+                            if r >= lower and r <= upper  or (lower <= 1 and r == 14):
+                                self.outs_safe[i].append(self.d.get_deck()[j])
+                        if self.ranks_u[0] == 14:
+                            for j in range(self.d.get_size()):
+                                if self.d.get_deck()[j][0] <= 5:
+                                    self.outs_safe[i].append(self.d.get_deck()[j])
+                    else: # pair and single, or 3 singles.  Must get range for individual cards
+                        for j in range(len(self.ranks_u)):
+                            lower = self.ranks_u[j] - 4
+                            upper = self.ranks_u[j] + 4
+                            for k in range(self.d.get_size()):
+                                r = self.d.get_deck()[k][0]
+                                if r != self.ranks_u[j]:
+                                    if (r >= lower and r <= upper)  or (lower <= 1 and r == 14):
+                                        self.outs_safe[i].append(self.d.deck[k])
+                        if max_r == 14:
+                            for j in range(self.d.get_size()):
+                                if self.d.get_deck()[j][0] <= 5:
+                                    self.outs_safe[i].append(self.d.get_deck()[j])
+                        # print('Calculating straight outs for 3 singles or pair n single')
+                        # print(self.outs_safe[i])
+                        self.outs_safe[i] = cards.remove_duplicates(self.outs_safe[i])
+                        # print(self.outs_safe[i])
+
+                elif len(self.h) == 4 and len(self.ranks_u) >= 2: 
+                    # 3 cards left. Treat cards remaining as max gap.  Scan low to high counting gaps.
+                    pass
+                elif len(self.h) == 5 and len(self.ranks_u) >= 3: 
+                    # 2 cards left.
+                    pass
+                elif len (self.h) == 6 and len(self.ranks_u) >= 4: 
+                    # 1 card.  Must hit.
+                    self.outs_safe[i] = self.outs_hit[i] 
+
+                    # check range, gaps and compare to cards left to come?
+                    # print('STRAIGHT CHECK\n' + str(len(self.h)) +  ' cards dealt')
+                    max_r = self.ranks[(len(self.ranks) - 1)]
+                    min_r = self.ranks[0]
+                    # Ace check
+                    ace_low = False
                     if self.ranks[(len(self.ranks) - 1)] == 14 and self.ranks[(len(self.ranks) - 2)] <= 5:
                         # consider Ace low
-                        # print('Ace is low')
                         self.ranks[(len(self.ranks) - 1)] = 1
                         self.ranks = sorted(self.ranks)
                         max_r = self.ranks[(len(self.ranks) - 1)]
                         min_r = self.ranks[0]
                         ace_low = True
-                    # check range and unique values
+                    # check range and unique values ------------------------------------------------ needs edit
                     if len(self.ranks_u) == len(self.ranks) and (max_r - min_r) < 5:
                         # print('Cards are within a valid straight range')
                         upper = min_r + 4
@@ -659,9 +694,7 @@ def evaluate_hand(hand):
                 two_pair_compare[1] = ranks_sorted[i]
 
         kickers = sorted(kickers, reverse=True)
-
     # print('Contains ranks ' + str(ranks_sorted) + ' occurring ' + str(count) + ' times respectively.   Kickers: ' + str(kickers))
-
     # Determine value
     if flush and straight and (max(ranks_sorted) == 14):  # Royal Flush
         value[0] = 9
