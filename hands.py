@@ -107,48 +107,48 @@ class Odds():
                             if self.d.get_deck()[j][0] == self.pair_compare or self.d.get_deck()[j][0] == self.pair_compare_two:
                                 self.outs_hit[i].append(self.d.get_deck()[j])
             elif i == 4: # Straight
-                # this whole thing needs redoing.  Maybe from your old count_outs code.
-                if len(self.h) >= 4:
-                    max_r = self.ranks[(len(self.ranks) - 1)]
-                    min_r = self.ranks[0]
-                    ace_low = False
-                    if self.ranks[(len(self.ranks) - 1)] == 14 and self.ranks[(len(self.ranks) - 2)] <= 5:
-                        # consider Ace low
-                        self.ranks[(len(self.ranks) - 1)] = 1
-                        self.ranks = sorted(self.ranks)
-                        max_r = self.ranks[(len(self.ranks) - 1)]
-                        min_r = self.ranks[0]
-                        ace_low = True
-                    # check range and unique values
-                    if len(self.ranks_u) == len(self.ranks) and (max_r - min_r) < 5:
-                        upper = min_r + 4
-                        lower = max_r - 4
-                        j = lower
-                        while j <= upper:
-                            found = False
-                            for k in range(len(self.ranks)):
-                                if self.ranks[k] == j:
-                                    found = True
-                            if not found:
-                                for c in range(self.d.get_size()):
-                                    if self.d.get_deck()[c][0] == j:
-                                        self.outs_hit[i].append(self.d.get_deck()[c])
-                            j += 1
-                    # Convert Ace back to high for other functions
-                    if ace_low:
-                        self.ranks[0] = 14
-                        self.ranks = sorted(self.ranks)
+                if len (self.h) == 6 and len(self.ranks_u) >= 4:
+                    gap = 1
+                    scale = [1,2,3,4,5,6,7,8,9,10]
+                    for j in range(len(scale)):
+                        min = scale[j]
+                        max = scale[j] + 4
+                        in_range = 0
+                        for r in self.ranks_u:
+                            if (r >= min and r <= max) or (min == 1 and r == 14):
+                                in_range += 1
+                        if in_range >= (5 - gap):
+                            for card in self.d.get_deck():
+                                in_hand = False
+                                for r in self.ranks_u:
+                                    if card[0] == r:
+                                        in_hand = True
+                                if ((card[0] >=min and card[0]<=max) or (card[0] == 14 and min == 1)) and not in_hand:
+                                    self.outs_hit[i].append(card)
+                    if len(self.outs_hit[i]) > 1:
+                        self.outs_hit[i] = cards.remove_duplicates(self.outs_hit[i])
             elif i == 5: # Flush
-                if len(self.h) == 4:
-                    if len(self.suits_u) == 1:
-                        for j in range(self.d.get_size()):
-                            if self.d.get_deck()[j][1] == self.suits_u[0]:
-                                found = False
-                                for k in range(len(self.h)):
-                                    if self.d.get_deck()[j] == self.h[k]:
-                                        found = True
-                                if not found:
-                                    self.outs_hit[i].append(self.d.get_deck()[j])    
+                if len(self.h) >= 4:
+                    s_count = count_suits(self.h) # returns count in form [H,D,C,S]
+                    for j in range(len(s_count)):
+                        if s_count[j] == 4:
+                            # Flush draw
+                            if j == 0: # H
+                                for card in self.d.get_deck():
+                                    if card[1] == 'H':
+                                        self.outs_hit[i].append(card)
+                            if j == 1: # D
+                                for card in self.d.get_deck():
+                                        if card[1] == 'D':
+                                            self.outs_hit[i].append(card)
+                            if j == 2: # C
+                                for card in self.d.get_deck():
+                                        if card[1] == 'C':
+                                            self.outs_hit[i].append(card)
+                            if j == 3: # S
+                                for card in self.d.get_deck():
+                                        if card[1] == 'S':
+                                            self.outs_hit[i].append(card)
             elif i == 6: # Full House
                 if not self.quads and len(self.h) == 4: 
                     if len(self.ranks_u) == 2:  
@@ -271,62 +271,104 @@ class Odds():
                 elif len(self.h) == 6:
                     self.outs_safe[i] = self.outs_hit[i]
             elif i == 4: # Straight
-                if len(self.h) <= 2 or self.quads: # add an if trips?? To be safe on the quad
-                    # Any card safe 
+                if len(self.h) == 6 and len(self.ranks_u) >= 4:
+                    self.outs_safe[i] = self.outs_hit[i]
+                elif len(self.h) <= 2 or self.quads: 
                     self.outs_safe[i] = self.d.get_deck()
                 elif len(self.h) < 6:
-                    if len(self.ranks_u) == 1: # trip
-                        lower = self.ranks_u[0] - 4
-                        upper = self.ranks_u[0] + 4                     
-                        for j in range(self.d.get_size()):
-                            r = self.d.get_deck()[j][0]
-                            # card must be in range. Duplicate of trip create quads (still safe)
-                            if r >= lower and r <= upper  or (lower <= 1 and r == 14):
-                                self.outs_safe[i].append(self.d.get_deck()[j])
-                        if self.ranks_u[0] == 14:
-                            for j in range(self.d.get_size()):
-                                if self.d.get_deck()[j][0] <= 5:
-                                    self.outs_safe[i].append(self.d.get_deck()[j])
-                    elif len(self.h) == 3: 
-                        # pair and single, or 3 singles.  Must get range for each individual card
-                        # single card + 4 can make a straight
+                    if len(self.h) == 3:
                         gap = 4
-                        for j in range(len(self.ranks_u)):
-                            lower = self.ranks_u[j] - gap
-                            upper = self.ranks_u[j] + gap
-                            for k in range(self.d.get_size()):
-                                r = self.d.get_deck()[k][0]
-                                if r != self.ranks_u[j]:
-                                    if (r >= lower and r <= upper)  or (lower <= 1 and r == 14):
-                                        self.outs_safe[i].append(self.d.deck[k])
-                        if max_r == 14:
-                            for j in range(self.d.get_size()):
-                                if self.d.get_deck()[j][0] <= 5:
-                                    self.outs_safe[i].append(self.d.get_deck()[j])
-                        self.outs_safe[i] = cards.remove_duplicates(self.outs_safe[i])
-                    elif len(self.h) == 4 and len(self.ranks_u) >= 2: 
-
-                    elif len(self.h) == 5 and len(self.ranks_u) >= 3: 
-                                        
-
-                elif len (self.h) == 6 and len(self.ranks_u) >= 4: 
-                    # 1 card.  Must hit.
-                    self.outs_safe[i] = self.outs_hit[i] 
-
-
-
-
-                       
+                    elif len(self.h) == 4 and len(self.ranks_u) >= 2:
+                        gap = 3
+                    elif len(self.h) == 5 and len(self.ranks_u) >= 3:
+                        gap = 2
+                    elif len (self.h) == 6 and len(self.ranks_u) >= 4:
+                        gap = 1
+                    else:
+                        gap = 0
+                    if gap > 0:
+                        scale = [1,2,3,4,5,6,7,8,9,10]
+                        for j in range(len(scale)):
+                            min = scale[j]
+                            max = scale[j] + 4
+                            in_range = 0
+                            for r in self.ranks_u:
+                                if (r >= min and r <= max) or (min == 1 and r == 14):
+                                    in_range += 1
+                            if in_range >= (5 - gap):
+                                for card in self.d.get_deck():
+                                    in_hand = False
+                                    for r in self.ranks_u:
+                                        if card[0] == r:
+                                            in_hand = True
+                                    if ((card[0] >=min and card[0]<=max) or (card[0] == 14 and min == 1)) and not in_hand:
+                                        self.outs_safe[i].append(card)
+                        if len(self.outs_safe[i]) > 1:
+                            self.outs_safe[i] = cards.remove_duplicates(self.outs_safe[i])
+                # if trips, getting the quad would be safe too.  Shouldn't matter though if you're combining safe cards from better hands in final output                    
             elif i == 5: # Flush
-                if len(self.suits_u) == 1:
-                    for j in range(self.d.get_size()):
-                        if self.d.get_deck()[j][1] == self.suits_u[0]:
-                            found = False
-                            for k in range(len(self.h)):
-                                if self.d.get_deck()[j] == self.h[k]:
-                                    found = True
-                            if not found:
-                                 self.outs_safe[i].append(self.d.get_deck()[j])
+                if len(self.suits_u) <= 3: # Flush not possible if len > 3
+                    s_count = count_suits(self.h) # returns count in form [H,D,C,S]
+                    s_max = max(s_count)
+                    if len(self.h) <= 2 or s_max >= 5 or (len(self.suits_u) == 1 and len(self.h) < 6): # enough cards to come or Flush already made
+                        self.outs_safe[i] = self.d.get_deck()
+                    elif len(self.h) == 6: # Must hit on final card
+                        self.outs_safe[i] = self.outs_hit[i]
+                    elif len(self.suits_u) == 3 and len(self.h) == 3: # one of each suit.  Must match at least one.
+                        for j in range(len(s_count)):
+                            if s_count[j] == 1:
+                                if j == 0: # H
+                                    for card in self.d.get_deck():
+                                        if card[1] == 'H':
+                                            self.outs_safe[i].append(card)
+                                if j == 1: # D
+                                    for card in self.d.get_deck():
+                                            if card[1] == 'D':
+                                                self.outs_safe[i].append(card)
+                                if j == 2: # C
+                                    for card in self.d.get_deck():
+                                            if card[1] == 'C':
+                                                self.outs_safe[i].append(card)
+                                if j == 3: # S
+                                    for card in self.d.get_deck():
+                                            if card[1] == 'S':
+                                                self.outs_safe[i].append(card)
+                    elif len(self.suits_u) == 3 and len(self.h) > 3:
+                        # check two suits occur only once, add outs for whichever suit occurs more than once
+                        if s_count[0] > 1 and s_count[1] <= 1 and s_count[2] <= 1 and s_count[3] <= 1:
+                            for card in self.d.get_deck():
+                                if card[1] == 'H':
+                                    self.outs_safe[i].append(card)
+                        if s_count[1] > 1 and s_count[2] <= 1 and s_count[3] <= 1 and s_count[0] <= 1:
+                            for card in self.d.get_deck():
+                                if card[1] == 'D':
+                                    self.outs_safe[i].append(card)
+                        if s_count[2] > 1 and s_count[3] <= 1 and s_count[0] <= 1 and s_count[1] <= 1:
+                            for card in self.d.get_deck():
+                                if card[1] == 'C':
+                                    self.outs_safe[i].append(card)
+                        if s_count[3] > 1 and s_count[0] <= 1 and s_count[1] <= 1 and s_count[2] <= 1:
+                            for card in self.d.get_deck():
+                                if card[1] == 'S':
+                                    self.outs_safe[i].append(card)
+                    elif len(self.suits_u) == 2: 
+                        # check no more than one suit occurs more than twice. Outs for any suit that 
+                        if s_count[0] >= 2 and s_count[1] <= 2 and s_count[2] <= 2 and s_count[3] <= 2:
+                            for card in self.d.get_deck():
+                                if card[1] == 'H':
+                                    self.outs_safe[i].append(card)
+                        if s_count[1] >= 2 and s_count[2] <= 2 and s_count[3] <= 2 and s_count[0] <= 2:
+                            for card in self.d.get_deck():
+                                if card[1] == 'D':
+                                    self.outs_safe[i].append(card)
+                        if s_count[2] >= 2 and s_count[3] <= 2 and s_count[0] <= 2 and s_count[1] <= 2:
+                            for card in self.d.get_deck():
+                                if card[1] == 'C':
+                                    self.outs_safe[i].append(card)
+                        if s_count[3] >= 2 and s_count[0] <= 2 and s_count[1] <= 2 and s_count[2] <= 2:
+                            for card in self.d.get_deck():
+                                if card[1] == 'S':
+                                    self.outs_safe[i].append(card)
             elif i == 6: # Full House
                 if len(self.ranks_u) <= 1 or self.quads:
                     self.outs_safe[i] = self.d.get_deck()
@@ -577,6 +619,22 @@ class Odds():
                     print('   Royal Flush: All')
                 else:
                     print('   Royal Flush: ' + str(self.outs_hit[i]))
+
+# returns list of number of suits [H,D,C,S] for a given list of cards.
+# counting outs for Flush depends on this function.  Take care if altering!  
+def count_suits(H):
+    h = H[:]
+    suits = [0,0,0,0]
+    for card in h:
+        if card[1] == 'H':
+            suits[0] += 1
+        if card[1] == 'D':
+            suits[1] += 1
+        if card[1] == 'C':
+            suits[2] += 1
+        if card[1] == 'S':
+            suits[3] += 1
+    return suits
 
 
 # Evaluates a five card hand
