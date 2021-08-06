@@ -111,11 +111,11 @@ class Odds():
                     gap = 1
                     scale = [1,2,3,4,5,6,7,8,9,10]
                     for j in range(len(scale)):
-                        min = scale[j]
-                        max = scale[j] + 4
+                        sc_min = scale[j]
+                        sc_max = scale[j] + 4
                         in_range = 0
                         for r in self.ranks_u:
-                            if (r >= min and r <= max) or (min == 1 and r == 14):
+                            if (r >= sc_min and r <= sc_max) or (sc_min == 1 and r == 14):
                                 in_range += 1
                         if in_range >= (5 - gap):
                             for card in self.d.get_deck():
@@ -123,7 +123,7 @@ class Odds():
                                 for r in self.ranks_u:
                                     if card[0] == r:
                                         in_hand = True
-                                if ((card[0] >=min and card[0]<=max) or (card[0] == 14 and min == 1)) and not in_hand:
+                                if ((card[0] >= sc_min and card[0] <= sc_max) or (card[0] == 14 and sc_min == 1)) and not in_hand:
                                     self.outs_hit[i].append(card)
                     if len(self.outs_hit[i]) > 1:
                         self.outs_hit[i] = cards.remove_duplicates(self.outs_hit[i])
@@ -289,11 +289,11 @@ class Odds():
                     if gap > 0:
                         scale = [1,2,3,4,5,6,7,8,9,10]
                         for j in range(len(scale)):
-                            min = scale[j]
-                            max = scale[j] + 4
+                            sc_min = scale[j]
+                            sc_max = scale[j] + 4
                             in_range = 0
                             for r in self.ranks_u:
-                                if (r >= min and r <= max) or (min == 1 and r == 14):
+                                if (r >= sc_min and r <= sc_max) or (sc_min == 1 and r == 14):
                                     in_range += 1
                             if in_range >= (5 - gap):
                                 for card in self.d.get_deck():
@@ -301,7 +301,7 @@ class Odds():
                                     for r in self.ranks_u:
                                         if card[0] == r:
                                             in_hand = True
-                                    if ((card[0] >=min and card[0]<=max) or (card[0] == 14 and min == 1)) and not in_hand:
+                                    if ((card[0] >=sc_min and card[0]<=sc_max) or (card[0] == 14 and sc_min == 1)) and not in_hand:
                                         self.outs_safe[i].append(card)
                         if len(self.outs_safe[i]) > 1:
                             self.outs_safe[i] = cards.remove_duplicates(self.outs_safe[i])
@@ -310,7 +310,7 @@ class Odds():
                 if len(self.suits_u) <= 3: # Flush not possible if len > 3
                     s_count = count_suits(self.h) # returns count in form [H,D,C,S]
                     s_max = max(s_count)
-                    if len(self.h) <= 2 or s_max >= 5 or (len(self.suits_u) == 1 and len(self.h) < 6): # enough cards to come or Flush already made
+                    if len(self.h) <= 2 or s_max >= 5 or (len(self.suits_u) == 1 and len(self.h) < 6) or (): # enough cards to come or Flush already made
                         self.outs_safe[i] = self.d.get_deck()
                     elif len(self.h) == 6: # Must hit on final card
                         self.outs_safe[i] = self.outs_hit[i]
@@ -333,39 +333,39 @@ class Odds():
                                     for card in self.d.get_deck():
                                             if card[1] == 'S':
                                                 self.outs_safe[i].append(card)
-                    elif len(self.suits_u) == 3 and len(self.h) > 3:
+                    elif len(self.suits_u) == 3 and len(self.h):
                         # check two suits occur only once, add outs for whichever suit occurs more than once
-                        if s_count[0] > 1 and s_count[1] <= 1 and s_count[2] <= 1 and s_count[3] <= 1:
+                        if s_count[0] >= 1 and s_count[1] <= 1 and s_count[2] <= 1 and s_count[3] <= 1:
                             for card in self.d.get_deck():
                                 if card[1] == 'H':
                                     self.outs_safe[i].append(card)
-                        if s_count[1] > 1 and s_count[2] <= 1 and s_count[3] <= 1 and s_count[0] <= 1:
+                        if s_count[1] >= 1 and s_count[2] <= 1 and s_count[3] <= 1 and s_count[0] <= 1:
                             for card in self.d.get_deck():
                                 if card[1] == 'D':
                                     self.outs_safe[i].append(card)
-                        if s_count[2] > 1 and s_count[3] <= 1 and s_count[0] <= 1 and s_count[1] <= 1:
+                        if s_count[2] >= 1 and s_count[3] <= 1 and s_count[0] <= 1 and s_count[1] <= 1:
                             for card in self.d.get_deck():
                                 if card[1] == 'C':
                                     self.outs_safe[i].append(card)
-                        if s_count[3] > 1 and s_count[0] <= 1 and s_count[1] <= 1 and s_count[2] <= 1:
+                        if s_count[3] >= 1 and s_count[0] <= 1 and s_count[1] <= 1 and s_count[2] <= 1:
                             for card in self.d.get_deck():
                                 if card[1] == 'S':
                                     self.outs_safe[i].append(card)
-                    elif len(self.suits_u) == 2: 
-                        # check no more than one suit occurs more than twice. Outs for any suit that 
-                        if s_count[0] >= 2 and s_count[1] <= 2 and s_count[2] <= 2 and s_count[3] <= 2:
+                    elif len(self.suits_u) == 2 and len(self.h): 
+                        # outs for any suit where the OTHER suit does not exceed a count of two.  This might make prev condition redundant?
+                        if s_count[0] >= 0 and s_count[1] <= 2 and s_count[2] <= 2 and s_count[3] <= 2:
                             for card in self.d.get_deck():
                                 if card[1] == 'H':
                                     self.outs_safe[i].append(card)
-                        if s_count[1] >= 2 and s_count[2] <= 2 and s_count[3] <= 2 and s_count[0] <= 2:
+                        if s_count[1] >= 0 and s_count[2] <= 2 and s_count[3] <= 2 and s_count[0] <= 2:
                             for card in self.d.get_deck():
                                 if card[1] == 'D':
                                     self.outs_safe[i].append(card)
-                        if s_count[2] >= 2 and s_count[3] <= 2 and s_count[0] <= 2 and s_count[1] <= 2:
+                        if s_count[2] >= 0 and s_count[3] <= 2 and s_count[0] <= 2 and s_count[1] <= 2:
                             for card in self.d.get_deck():
                                 if card[1] == 'C':
                                     self.outs_safe[i].append(card)
-                        if s_count[3] >= 2 and s_count[0] <= 2 and s_count[1] <= 2 and s_count[2] <= 2:
+                        if s_count[3] >= 0 and s_count[0] <= 2 and s_count[1] <= 2 and s_count[2] <= 2:
                             for card in self.d.get_deck():
                                 if card[1] == 'S':
                                     self.outs_safe[i].append(card)

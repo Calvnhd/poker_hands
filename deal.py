@@ -12,7 +12,7 @@ while not done:
     # d.bias_deck(8)
     h = []
     while len(h) < 7:
-        # input("Press Enter to deal a card \n")
+        input("Press Enter to deal a card \n")
         print('DEALING CARD -----------------------------------------------------------------------------------')
         h.append(d.take_card())
         o.update(h,d)
