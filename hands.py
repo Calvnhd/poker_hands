@@ -168,70 +168,18 @@ class Odds():
                 if not self.quads:
                     if self.trips:
                         # quad up trips
-                        for k in range(self.d.get_size()):
-                            if self.trip_compare == self.d.get_deck()[k][0]:
-                                print('self.trip_compare: ' + str(self.trip_compare) + ' --- self.d.get_deck()[k][0]: ' + str(self.d.get_deck()[k][0]) + ' --- self.d.get_deck()[k]: ' + str(self.d.get_deck()[k]) )
-                                self.outs_hit[i].append(self.d.get_deck()[k])
-                    if len(self.h) == 4 and self.pair_two:
-                        # match either rank
-                        for j in range(len(self.ranks_u)):
-                            for k in range(self.d.get_size()):
-                                if self.ranks_u[j] == self.d.get_deck()[k][0]:
-                                    self.outs_hit[i].append(self.d.get_deck()[k])
+                        for card in self.d.get_deck():
+                            if self.trip_compare == card[0]:
+                                self.outs_hit[i].append(card)
             elif i == 8: # Straight Flush
-                if len(self.ranks) == 4 and len(self.ranks_u) == 4 and len(self.suits_u) == 1:
-                    suit = self.suits_u[0]
-                    max_r = self.ranks[(len(self.ranks) - 1)]
-                    min_r = self.ranks[0]
-                    ace_low = False
-                    if self.ranks[(len(self.ranks) - 1)] == 14 and self.ranks[(len(self.ranks) - 2)] <= 5:
-                        # consider Ace low
-                        self.ranks[(len(self.ranks) - 1)] = 1
-                        self.ranks = sorted(self.ranks)
-                        max_r = self.ranks[(len(self.ranks) - 1)]
-                        min_r = self.ranks[0]
-                        ace_low = True
-                    # check range and unique values
-                    if len(self.ranks_u) == len(self.ranks) and (max_r - min_r) < 5:
-                        upper = min_r + 4
-                        lower = max_r - 4
-                        j = lower
-                        while j <= upper:
-                            found = False
-                            for k in range(len(self.ranks)):
-                                if self.ranks[k] == j:
-                                    found = True
-                            if not found:
-                                for c in range(self.d.get_size()):
-                                    if suit == self.d.get_deck()[c][1]:
-                                        if self.d.get_deck()[c][0] == j:
-                                            self.outs_hit[i].append(self.d.get_deck()[c])
-                            j += 1
-                    # Convert Ace back to high for other functions
-                    if ace_low:
-                        self.ranks[0] = 14
-                        self.ranks = sorted(self.ranks)
+                s_outs = self.outs_hit[4][:]
+                f_outs = self.outs_hit[5][:]
+                for s_out in s_outs:
+                    for f_out in f_outs:
+                        if s_out == f_out:
+                            self.outs_hit[i].append(s_out)
             elif i == 9: # Royal Flush
-                if len(self.h) == 4 and len(self.ranks_u) == 4 and len(self.suits_u) == 1:
-                    suit = self.suits_u[0]
-                    max_r = self.ranks[(len(self.ranks) - 1)]
-                    min_r = self.ranks[0]
-                    # check range and unique values
-                    if len(self.ranks_u) == len(self.ranks) and (max_r - min_r) < 5:
-                        upper = 14
-                        lower = 10
-                        j = lower
-                        while j <= upper:
-                            found = False
-                            for k in range(len(self.ranks)):
-                                if self.ranks[k] == j:
-                                    found = True
-                            if not found:
-                                for c in range(self.d.get_size()):
-                                    if suit == self.d.get_deck()[c][1]:
-                                        if self.d.get_deck()[c][0] == j:
-                                            self.outs_hit[i].append(self.d.get_deck()[c])
-                            j += 1
+                pass
     def update_outs_safe(self): # create a list of cards that would improve a hand for a given hand ranking 0 to 9 (high card to royal flush)
         self.outs_safe = [[],[],[],[],[],[],[],[],[],[]]
         for i in range(len(self.outs_safe)):
@@ -348,94 +296,45 @@ class Odds():
                             for card in self.d.get_deck():
                                 if r == card[0]:
                                     self.outs_safe[i].append(card)
-
             elif i == 7: # Quads
-                if self.quads or len(self.ranks_u) == 1:
-                    self.outs_safe[i] = self.d.get_deck()
-                elif len(self.ranks_u) == 2:
-                    # match either rank
-                    for j in range(len(self.ranks_u)):
-                        for k in range(self.d.get_size()):
-                            if self.ranks_u[j] == self.d.get_deck()[k][0]:
-                                self.outs_safe[i].append(self.d.get_deck()[k])
+                if len(self.ranks_u) <= 4: # quads impossible with more than 4 ranks in 7 cards
+                    if self.quads or len(self.h) <= 3:
+                        self.outs_safe[i] = self.d.get_deck()
+                    elif len(self.h) == 6:
+                        self.outs_safe[i] = self.outs_hit[i]
+                    elif len(self.h) == 4:
+                        # match any rank
+                        for r in self.ranks_u:
+                            for card in self.d.get_deck():
+                                if card[0] == r:
+                                    self.outs_safe[i].append(card)
+                    elif len(self.h) == 5:
+                        # match any pair or trip
+                        for r in self.ranks_u:
+                            if r == self.pair_compare or r == self.pair_compare_two or r == self.trip_compare:
+                                for card in self.d.get_deck():
+                                    if card[0] == r:
+                                        self.outs_safe[i].append(card)
             elif i == 8: # Straight Flush
-                if len(self.suits_u) == 1:
-                    suit = self.suits_u[0]
-                    if len(self.h) == 1:
-                        # 5 up and down
-                        lower = self.ranks[0] - 4
-                        upper = self.ranks[0] + 4
-                        # print('STRAIGHT CHECK\nOnly one card dealt')
-                        # print('lower: ' + str(lower) + ' upper: ' + str(upper) + ' for ranks ' + str(self.ranks))
-                        for j in range(self.d.get_size()):
-                            r = self.d.get_deck()[j][0]
-                            s = self.d.get_deck()[j][1]
-                            if suit == s:
-                                if r >= lower and r <= upper and r != self.ranks[0] or (lower <= 1 and r == 14):
-                                    self.outs_safe[i].append(self.d.get_deck()[j])
-                        if self.ranks[0] == 14:
-                            for j in range(self.d.get_size()):
-                                s = self.d.get_deck()[j][1]
-                                if suit == s:
-                                    if self.d.get_deck()[j][0] <= 5:
-                                        self.outs_safe[i].append(self.d.get_deck()[j])
-                    elif len(self.h) > 1:
-                        ace_low = False
-                        max_r = self.ranks[(len(self.ranks) - 1)]
-                        min_r = self.ranks[0]
-                        if self.ranks[(len(self.ranks) - 1)] == 14 and self.ranks[(len(self.ranks) - 2)] <= 5:
-                            # consider Ace low
-                            self.ranks[(len(self.ranks) - 1)] = 1
-                            self.ranks = sorted(self.ranks)
-                            max_r = self.ranks[(len(self.ranks) - 1)]
-                            min_r = self.ranks[0]
-                            ace_low = True
-                        # check range and unique values
-                        if len(self.ranks_u) == len(self.ranks) and (max_r - min_r) < 5:
-                            upper = min_r + 4
-                            lower = max_r - 4
-                            j = lower
-                            while j <= upper:
-                                found = False
-                                for k in range(len(self.ranks)):
-                                    if self.ranks[k] == j:
-                                        # print(str(j) + ' has been found in hand ' + str(self.ranks) + ' at k = ' + str(k))
-                                        found = True
-                                if not found:
-                                    # print('rank j = ' + str(j) + ' is not in the hand ... adding to outs_safe')
-                                    for c in range(self.d.get_size()):
-                                        s = self.d.get_deck()[c][1]
-                                        if suit == s:
-                                            if self.d.get_deck()[c][0] == j:
-                                                self.outs_safe[i].append(self.d.get_deck()[c])
-                                j += 1
-                        # Convert Ace back to high for other functions
-                        if ace_low:
-                            # print('Setting Ace high again')
-                            self.ranks[0] = 14
-                            self.ranks = sorted(self.ranks)
+                if len(self.h) == 6:
+                    self.outs_safe[i] = self.outs_hit[i]
+                else:
+                    s_outs = self.outs_safe[4][:]
+                    f_outs = self.outs_safe[5][:]
+                    for s_out in s_outs:
+                        for f_out in f_outs:
+                            if s_out == f_out:
+                                self.outs_safe[i].append(s_out)
             elif i == 9: # Royal Flush
-                if (len(self.ranks) == len(self.ranks_u)) and (len(self.suits_u) == 1):
-                    royal_ranks = True
-                    for j in range(len(self.ranks_u)):
-                        if self.ranks_u[j] <= 10:
-                            royal_ranks = False
-                    if royal_ranks:
-                        upper = 14
-                        lower = 10
-                        j = lower
-                        while j <= upper:
-                            found = False
-                            for k in range(len(self.ranks_u)):
-                                if self.ranks_u[k] == j:
-                                    found = True
-                            if not found:
-                                # print('rank j = ' + str(j) + ' is not in the hand ... adding to outs_safe')
-                                for k in range(self.d.get_size()):
-                                    if suit == self.d.get_deck()[k][1]:
-                                        if self.d.get_deck()[k][0] == j:
-                                            self.outs_safe[i].append(self.d.get_deck()[k])
-                            j += 1
+                if len(self.h) == 1:
+                    self.outs_safe[i] = self.d.get_deck()
+                elif len(self.h) == 6:
+                    self.outs_safe[i] = self.outs_hit[i]
+                else:
+                    pass
+                    # make list of all royal cards
+                    # for card 3, full list minus any already drawn
+                    # subsequent cards, remove any of 
     def get_chances_safe(self):
         return self.chances_safe
     def get_chances_hit(self):
