@@ -152,20 +152,18 @@ class Odds():
                                             if card[1] == 'S':
                                                 self.outs_hit[i].append(card)
             elif i == 6: # Full House
-                if not self.quads and len(self.h) >= 4: 
-                    if len(self.ranks_u) == 2:  
-                        if not self.trips:
-                            # match either card to get trip on either pair
-                            for j in range(len(self.ranks_u)):
-                                for k in range(self.d.get_size()):
-                                    if self.d.get_deck()[k][0] == self.ranks_u[j]:
-                                        self.outs_hit[i].append(self.d.get_deck()[k])
-                        else:
-                            # pair up single card
-                            for j in range(len(self.ranks_u)):
-                                for k in range(self.d.get_size()):
-                                    if self.d.get_deck()[k][0] == self.ranks_u[j] and self.ranks_u[j] != self.trip_compare:
-                                        self.outs_hit[i].append(self.d.get_deck()[k])
+                if not self.quads and len(self.h) >= 4 and (self.pair_two or self.trips):
+                    # Match either pair, or single card with trips
+                    if self.pair_two or self.pair_three:
+                        for card in self.d.get_deck():
+                            if card[0] == self.pair_compare or card[0] == self.pair_compare_two or card[0] == self.pair_compare_three:
+                                self.outs_hit[i].append(card)
+                    elif self.trips:
+                        for r in self.ranks_u:
+                            if r != self.trip_compare:
+                                for card in self.d.get_deck():
+                                    if card[0] == r:
+                                        self.outs_hit[i].append(card)
             elif i == 7: # Quads
                 if not self.quads:
                     if self.trips:
@@ -339,16 +337,18 @@ class Odds():
                                             if card[1] == 'S':
                                                 self.outs_safe[i].append(card)
             elif i == 6: # Full House
-                if len(self.ranks_u) <= 1 or self.quads:
-                    self.outs_safe[i] = self.d.get_deck()
-                elif len(self.h) == 4 and not self.trips:
-                    self.outs_safe[i] = self.outs_hit[i]
-                elif len(self.ranks_u) == 2:
-                    # match either card
-                    for j in range(len(self.ranks_u)):
-                        for k in range(self.d.get_size()):
-                            if self.ranks_u[j] == self.d.get_deck()[k][0]:
-                                self.outs_safe[i].append(self.d.get_deck()[k])
+                if len(self.ranks_u) <= 4: # FH impossible with more than 4 ranks in 7 cards
+                    if len(self.ranks_u) <= 2 or len(self.h) <= 3 or self.quads or (self.pair_one and len(self.h) <= 4 ) or (self.trips and len(self.h) <= 5) or (self.pair_two and len(self.h) <= 5):
+                        self.outs_safe[i] = self.d.get_deck()
+                    elif len(self.h) == 6:
+                        self.outs_safe[i] = self.outs_hit[i]
+                    else: # 4 or 5 cards in hand, with 4 unique ranks.  Match any card
+                        print('FH CARD MATCHING!!')
+                        for r in self.ranks_u:
+                            for card in self.d.get_deck():
+                                if r == card[0]:
+                                    self.outs_safe[i].append(card)
+
             elif i == 7: # Quads
                 if self.quads or len(self.ranks_u) == 1:
                     self.outs_safe[i] = self.d.get_deck()
@@ -447,9 +447,12 @@ class Odds():
         self.trips = False
         self.pair_one = False
         self.pair_two = False
+        self.pair_three = False # 3 pairs possible with 7 cards. Required for outs to hit FH.
         self.pair_compare = 0
-        self.trip_compare = 0
         self.pair_compare_two = 0
+        self.pair_compare_three = 0
+        self.trip_compare = 0
+        # self.two_pair_compare = [0,0]
         # quad_compare = []
         # fh_compare = [0,0]
         count = []
@@ -460,29 +463,28 @@ class Odds():
                 if self.ranks[j] == self.ranks_u[i]:
                     c += 1
             count.append(c)
-        # print('count: ' + str(count))
         # Find quads / trips / pairs based on final count value
         for i in range(len(count)):
             if count[i] == 4:
-                # print('quads made')
                 self.quads = True
                 # quad_compare = self.ranks_u[i]
             elif count[i] == 3:
-                # print('trips made')
                 self.trips = True
                 # fh_compare[0] = self.ranks_u[i]
                 self.trip_compare = self.ranks_u[i]
             elif count[i] == 2 and not self.pair_one:
-                # print('one pair made: ' + str(self.ranks_u[i]))
                 self.pair_one = True
                 self.pair_compare = self.ranks_u[i]
                 # fh_compare[1] = self.ranks_u[i]
-            elif count[i] == 2 and self.pair_one:
-                # print('two pair made')
+            elif count[i] == 2 and self.pair_one and not self.pair_two:
                 self.pair_two = True
                 self.pair_compare_two = self.ranks_u[i]
-                # two_pair_compare[0] = pair_compare
-                # two_pair_compare[1] = self.ranks_u[i]
+                # self.two_pair_compare[0] = self.pair_compare
+                # self.two_pair_compare[1] = self.ranks_u[i]
+            elif count[i] == 2 and self.pair_one and self.pair_two:
+                self.pair_three = True
+                self.pair_compare_three = self.ranks_u[i]
+                # update self.two_pair_compare if ever used!
     def print_outs(self):
         print('***   SAFE   ***')
         for i in range(len(self.outs_safe)):
@@ -603,7 +605,7 @@ def count_suits(H):
             suits[2] += 1
         if card[1] == 'S':
             suits[3] += 1
-    print('count_suits HDCS: ' + str(suits))
+    # print(f'count_suits HDCS: {suits}')
     return suits
 
 
