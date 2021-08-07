@@ -326,15 +326,35 @@ class Odds():
                             if s_out == f_out:
                                 self.outs_safe[i].append(s_out)
             elif i == 9: # Royal Flush
-                if len(self.h) == 1:
-                    self.outs_safe[i] = self.d.get_deck()
-                elif len(self.h) == 6:
+                if len(self.h) == 6:
                     self.outs_safe[i] = self.outs_hit[i]
                 else:
-                    pass
-                    # make list of all royal cards
-                    # for card 3, full list minus any already drawn
-                    # subsequent cards, remove any of 
+                    h_not_royal = 0
+                    for r in self.ranks:
+                        if r <= 10:
+                            h_not_royal += 1 # this can never exceed 2
+                    if h_not_royal < 2:
+                        self.outs_safe[i] = self.d.get_deck()
+                    else:
+                        royals = []
+                        for card in self.d.get_deck():
+                            if card[0] >= 10:
+                                royals.append(card)
+                        if h_not_royal == 2 and len(self.h) <= 3:
+                            self.outs_safe[i] = royals
+                        # make list of all royal cards
+                        # for card 3, full list minus any already drawn
+                        # subsequent cards, remove any of 
+                        if len(self.h) == 2:
+                            # draw any royal... or anything if royals already drawn?
+                            pass
+                        elif len(self.h) == 3:
+                            # draw any royal matching any drawn royal suit
+                            pass
+                        elif len(self.h) == 4:
+                            # draw a royal matching MOST drawn royal suits 
+                            pass
+
     def get_chances_safe(self):
         return self.chances_safe
     def get_chances_hit(self):
