@@ -4,7 +4,7 @@
 
 ## To do
 * Extend to 7 cards (Texas Hold'em) -- edit outs_safe and outs_hit
-** Extension up to Flush complete.  Needs testing.
+** Extension up to Flush complete.
 * Combine / clean up output
 ** Cards to hit, cards safe, hands made / superceded / no longer possible
 * Add graphics

@@ -128,29 +128,31 @@ class Odds():
                     if len(self.outs_hit[i]) > 1:
                         self.outs_hit[i] = cards.remove_duplicates(self.outs_hit[i])
             elif i == 5: # Flush
-                if len(self.h) >= 4:
+                if len(self.h) >= 4 and len(self.suits_u) <= 3:
                     s_count = count_suits(self.h) # returns count in form [H,D,C,S]
-                    for j in range(len(s_count)):
-                        if s_count[j] == 4:
-                            # Flush draw
-                            if j == 0: # H
-                                for card in self.d.get_deck():
-                                    if card[1] == 'H':
-                                        self.outs_hit[i].append(card)
-                            if j == 1: # D
-                                for card in self.d.get_deck():
-                                        if card[1] == 'D':
+                    s_max = max(s_count)
+                    if s_max == 4:
+                        for j in range(len(s_count)):
+                            if s_count[j] == 4:
+                                # Flush draw
+                                if j == 0: # H
+                                    for card in self.d.get_deck():
+                                        if card[1] == 'H':
                                             self.outs_hit[i].append(card)
-                            if j == 2: # C
-                                for card in self.d.get_deck():
-                                        if card[1] == 'C':
-                                            self.outs_hit[i].append(card)
-                            if j == 3: # S
-                                for card in self.d.get_deck():
-                                        if card[1] == 'S':
-                                            self.outs_hit[i].append(card)
+                                if j == 1: # D
+                                    for card in self.d.get_deck():
+                                            if card[1] == 'D':
+                                                self.outs_hit[i].append(card)
+                                if j == 2: # C
+                                    for card in self.d.get_deck():
+                                            if card[1] == 'C':
+                                                self.outs_hit[i].append(card)
+                                if j == 3: # S
+                                    for card in self.d.get_deck():
+                                            if card[1] == 'S':
+                                                self.outs_hit[i].append(card)
             elif i == 6: # Full House
-                if not self.quads and len(self.h) == 4: 
+                if not self.quads and len(self.h) >= 4: 
                     if len(self.ranks_u) == 2:  
                         if not self.trips:
                             # match either card to get trip on either pair
@@ -307,16 +309,19 @@ class Odds():
                             self.outs_safe[i] = cards.remove_duplicates(self.outs_safe[i])
                 # if trips, getting the quad would be safe too.  Shouldn't matter though if you're combining safe cards from better hands in final output                    
             elif i == 5: # Flush
-                if len(self.suits_u) <= 3: # Flush not possible if len > 3
+                if len(self.h) == 6: # Must hit on final card
+                        self.outs_safe[i] = self.outs_hit[i]
+                else:
                     s_count = count_suits(self.h) # returns count in form [H,D,C,S]
                     s_max = max(s_count)
-                    if len(self.h) <= 2 or s_max >= 5 or (len(self.suits_u) == 1 and len(self.h) < 6) or (): # enough cards to come or Flush already made
-                        self.outs_safe[i] = self.d.get_deck()
-                    elif len(self.h) == 6: # Must hit on final card
-                        self.outs_safe[i] = self.outs_hit[i]
-                    elif len(self.suits_u) == 3 and len(self.h) == 3: # one of each suit.  Must match at least one.
+                    to_flush = 5 - s_max
+                    draws_left = 7 - len(self.h)
+                    # print(f'IN SAFE: s_max: {s_max}, to_flush: {to_flush}, draws_left: {draws_left}')
+                    if draws_left >= 5 or s_max >= 5 or (draws_left > to_flush): # enough cards to come, flush made, more draws than needed to hit
+                            self.outs_safe[i] = self.d.get_deck()
+                    elif draws_left == to_flush: # add only cards that can close flush gap
                         for j in range(len(s_count)):
-                            if s_count[j] == 1:
+                            if s_count[j] == s_max:
                                 if j == 0: # H
                                     for card in self.d.get_deck():
                                         if card[1] == 'H':
@@ -333,42 +338,6 @@ class Odds():
                                     for card in self.d.get_deck():
                                             if card[1] == 'S':
                                                 self.outs_safe[i].append(card)
-                    elif len(self.suits_u) == 3 and len(self.h):
-                        # check two suits occur only once, add outs for whichever suit occurs more than once
-                        if s_count[0] >= 1 and s_count[1] <= 1 and s_count[2] <= 1 and s_count[3] <= 1:
-                            for card in self.d.get_deck():
-                                if card[1] == 'H':
-                                    self.outs_safe[i].append(card)
-                        if s_count[1] >= 1 and s_count[2] <= 1 and s_count[3] <= 1 and s_count[0] <= 1:
-                            for card in self.d.get_deck():
-                                if card[1] == 'D':
-                                    self.outs_safe[i].append(card)
-                        if s_count[2] >= 1 and s_count[3] <= 1 and s_count[0] <= 1 and s_count[1] <= 1:
-                            for card in self.d.get_deck():
-                                if card[1] == 'C':
-                                    self.outs_safe[i].append(card)
-                        if s_count[3] >= 1 and s_count[0] <= 1 and s_count[1] <= 1 and s_count[2] <= 1:
-                            for card in self.d.get_deck():
-                                if card[1] == 'S':
-                                    self.outs_safe[i].append(card)
-                    elif len(self.suits_u) == 2 and len(self.h): 
-                        # outs for any suit where the OTHER suit does not exceed a count of two.  This might make prev condition redundant?
-                        if s_count[0] >= 0 and s_count[1] <= 2 and s_count[2] <= 2 and s_count[3] <= 2:
-                            for card in self.d.get_deck():
-                                if card[1] == 'H':
-                                    self.outs_safe[i].append(card)
-                        if s_count[1] >= 0 and s_count[2] <= 2 and s_count[3] <= 2 and s_count[0] <= 2:
-                            for card in self.d.get_deck():
-                                if card[1] == 'D':
-                                    self.outs_safe[i].append(card)
-                        if s_count[2] >= 0 and s_count[3] <= 2 and s_count[0] <= 2 and s_count[1] <= 2:
-                            for card in self.d.get_deck():
-                                if card[1] == 'C':
-                                    self.outs_safe[i].append(card)
-                        if s_count[3] >= 0 and s_count[0] <= 2 and s_count[1] <= 2 and s_count[2] <= 2:
-                            for card in self.d.get_deck():
-                                if card[1] == 'S':
-                                    self.outs_safe[i].append(card)
             elif i == 6: # Full House
                 if len(self.ranks_u) <= 1 or self.quads:
                     self.outs_safe[i] = self.d.get_deck()
@@ -634,6 +603,7 @@ def count_suits(H):
             suits[2] += 1
         if card[1] == 'S':
             suits[3] += 1
+    print('count_suits HDCS: ' + str(suits))
     return suits
 
 
