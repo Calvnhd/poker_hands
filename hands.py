@@ -179,7 +179,33 @@ class Odds():
                         if s_out == f_out:
                             self.outs_hit[i].append(s_out)
             elif i == 9: # Royal Flush
-                pass
+                if len(self.h) >= 4:
+                    h_royals = [[],[],[],[]] # sort royals by suit [[H],[D],[C],[S]]
+                    for card in self.h:
+                        if card[0] >= 10:
+                            if card[1] == 'H':
+                                h_royals[0].append(card)
+                            elif card[1] == 'D':
+                                h_royals[1].append(card)
+                            elif card[1] == 'C':
+                                h_royals[2].append(card)
+                            elif card[1] == 'S':
+                                h_royals[3].append(card)
+                    s = ''
+                    for j in range(len(h_royals)):
+                        if len(h_royals[j]) == 4:
+                            if j == 0:
+                                s = 'H'
+                            elif j == 1:
+                                s = 'D'
+                            elif j == 2:
+                                s = 'C'
+                            elif j == 3:
+                                s = 'S'    
+                    if s != '':
+                        for card in self.d.get_deck():
+                            if card[0] >= 10 and card[1] == s:
+                                self.outs_hit[i].append(card)
     def update_outs_safe(self): # create a list of cards that would improve a hand for a given hand ranking 0 to 9 (high card to royal flush)
         self.outs_safe = [[],[],[],[],[],[],[],[],[],[]]
         for i in range(len(self.outs_safe)):
@@ -326,35 +352,52 @@ class Odds():
                             if s_out == f_out:
                                 self.outs_safe[i].append(s_out)
             elif i == 9: # Royal Flush
-                if len(self.h) == 6:
+                draws_left = 7 - len(self.h)
+                h_not_royal = 0
+                for r in self.ranks:
+                    if r < 10:
+                        h_not_royal += 1 # this can never exceed 2. if == 2 you must draw royals.
+                h_royals = [[],[],[],[]] # sort royals in hand by suit [[H],[D],[C],[S]]
+                for card in self.h:
+                    if card[0] >= 10:
+                        if card[1] == 'H':
+                            h_royals[0].append(card)
+                        elif card[1] == 'D':
+                            h_royals[1].append(card)
+                        elif card[1] == 'C':
+                            h_royals[2].append(card)
+                        elif card[1] == 'S':
+                            h_royals[3].append(card)
+                remaining_H, remaining_D, remaining_C, remaining_S = 5 - len(h_royals[0]), 5 - len(h_royals[1]), 5 - len(h_royals[2]), 5 - len(h_royals[3])     # count royals remaining in deck by suit
+                # print(f'draws_left: {}, remaining_H: {}, remaining_D: {}, ')
+                if draws_left > remaining_H or draws_left > remaining_D or draws_left > remaining_C or draws_left > remaining_S:
+                    self.outs_safe[i] = self.d.get_deck()
+                elif draws_left == 1:
                     self.outs_safe[i] = self.outs_hit[i]
-                else:
-                    h_not_royal = 0
-                    for r in self.ranks:
-                        if r <= 10:
-                            h_not_royal += 1 # this can never exceed 2
-                    if h_not_royal < 2:
-                        self.outs_safe[i] = self.d.get_deck()
-                    else:
-                        royals = []
-                        for card in self.d.get_deck():
-                            if card[0] >= 10:
-                                royals.append(card)
-                        if h_not_royal == 2 and len(self.h) <= 3:
-                            self.outs_safe[i] = royals
-                        # make list of all royal cards
-                        # for card 3, full list minus any already drawn
-                        # subsequent cards, remove any of 
-                        if len(self.h) == 2:
-                            # draw any royal... or anything if royals already drawn?
-                            pass
-                        elif len(self.h) == 3:
-                            # draw any royal matching any drawn royal suit
-                            pass
-                        elif len(self.h) == 4:
-                            # draw a royal matching MOST drawn royal suits 
-                            pass
-
+                elif h_not_royal <= 2:
+                    d_royals = [] # extract royals from deck
+                    for card in self.d.get_deck():
+                        if card[0] >= 10:
+                            d_royals.append(card)
+                    if draws_left == 5:
+                        self.outs_safe[i] = d_royals
+                    else:  # check if there are enough draws left to close the gap in hand, and add cards that can close the gap
+                        if draws_left >= remaining_H:
+                            for card in d_royals:
+                                if card[1] == 'H':
+                                    self.outs_safe[i].append(card)
+                        if draws_left >= remaining_D:
+                            for card in d_royals:
+                                if card[1] == 'D':
+                                    self.outs_safe[i].append(card)
+                        if draws_left >= remaining_C:
+                            for card in d_royals:
+                                if card[1] == 'C':
+                                    self.outs_safe[i].append(card)
+                        if draws_left >= remaining_S:
+                            for card in d_royals:
+                                if card[1] == 'S':
+                                    self.outs_safe[i].append(card)
     def get_chances_safe(self):
         return self.chances_safe
     def get_chances_hit(self):

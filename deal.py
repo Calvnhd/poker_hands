@@ -9,7 +9,7 @@ done = False
 while not done:
     print('loop ' + str(i))
     d.shuffle()
-    # d.bias_deck(8)
+    d.bias_deck(9)
     h = []
     while len(h) < 7:
         input("Press Enter to deal a card \n")
