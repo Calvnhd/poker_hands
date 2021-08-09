@@ -45,7 +45,7 @@ class Deck:
     def info(self):             # Print number of cards remaining & removed
         info = 'Number of cards...\nRemaining: ' + str(len(self.deck)) + '\nRemoved: ' + str(len(self.removed))
         return info
-    def bias_deck(self, n):
+    def bias_deck(self, n): # Get specific cards to the front of the deck to get a desired hand quicker for testing.  A bit buggy.
         self.shuffle()
         h = []
         i = 0
@@ -67,6 +67,25 @@ class Deck:
             i += 1
         h.extend(self.deck)
         self.deck = h[:]
+
+# takes a list of cards, removes all real duplicates (same in rank AND suit), sorts, and returns list.
+# Used in special cases e.g. avoid recounting outs 
+def remove_duplicates(H):
+    h = H[:]
+    # clean up by marking duplicates as []
+    for i in range(len(h)):
+        for j in range(i+1,len(h)):
+            if h[i] == h[j] and h[i] != 0:
+                h[j] = []
+    h.sort() # all [] to front
+    done = False
+    while not done:
+        if h[0] == []:    
+            h.pop(0)
+        else:
+            done = True
+    return h
+
 
 
 
