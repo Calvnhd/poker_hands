@@ -2,18 +2,15 @@ import cards
 
 class Odds():
     def __init__(self):
-        # self.poss = [True,True,True,True,True,True,True,True,True,True]
         self.chances_hit = [1,1,1,1,1,1,1,1,1,1]
         self.chances_safe = [1,1,1,1,1,1,1,1,1,1]
-        self.quads = False
-        self.trips = False
-        self.pair_one = False
-        self.pair_two = False
-        self.h = []
-        self.d = []
+        self.outs = ['All','All','All','All','All','All','All','All','All','All']
+        self.o_len = [0,0,0,0,0,0,0,0,0,0]
+        self.chances = [100,100,100,100,100,100,100,100,100,100]
+        self.quads = self.trips = self.pair_one = self.pair_two = False
+        # self.h, self.d = [], []
     def update_rs(self): # separates h[] into (sorted) ranks[], unique ranks_u[], suits[], unique suits_u[]
-        self.ranks = []
-        self.suits = []
+        self.ranks, self.suits = [], []
         for i in range(len(self.h)):
             self.ranks.append(self.h[i][0])
             self.suits.append(self.h[i][1])
@@ -21,44 +18,185 @@ class Odds():
         self.ranks_u = sorted(list(set(self.ranks)))
         self.suits_u = list(set(self.suits))
     def update(self, h, d):
-        self.h = h
-        self.d = d
+        self.h, self.d = h[:], d
+        if len(h) >= 5: # find best made hand. make_hands expects hand + board. Slicing adapts to suit this.
+            h_h, h_b = h[:2], h[2:]
+            self.best_hand = make_hands(h_h,h_b)
+        else:
+            self.best_hand = [0]
         if len(h) <= 7:
             self.update_rs()        # separates h[] into (sorted) ranks[], unique ranks_u[], suits[], unique suits_u[]
             self.count_dups()       # updates bools self.pair_one, self.pair_two, self.trips, self.quads
             self.update_outs_hit()  # Creates list of cards to hit a hand on next card
-            self.update_outs_safe() # Creates list of cards to stay safe for a hand on next card
-            self.update_chances()   # Gets the probability to stay safe or hit on next card (2 separate lists)
-            # self.combine_info()
+            self.update_outs_safe() # Creates list of cards to stay safe for a hand on next card.  Hits MUST be called first.
+            self.update_chances()   # Gets the probability to hit or stay safe on next card and stores in self.chances_hit, self.chances_safe
+            self.combine_info()
         else:
             print('MAX CARDS REACHED')
     def combine_info(self):
-        # print('Chances for hand: ' + str(self.h) + ' with ' + str(self.d.get_size()) + ' cards remaining in deck')
         o_hit = self.outs_hit[:]
         o_safe = self.outs_safe[:]
-        c_hit = self.chances_hit[:]
-        c_safe = self.chances_safe[:]
-        for i in range(len(o_hit)):
-            if i == 0:
-                pass
-            if i == 1:
-                pass
-            if i == 2:
-                pass
-            if i == 3:
-                pass
-            if i == 4:
-                pass
-            if i == 5:
-                pass
-            if i == 6:
-                pass
-            if i == 7:
-                pass
-            if i == 8:
-                pass
-            if i == 9:
-                pass
+        if len(self.h) > 0:
+            for i in range(len(self.outs)):
+                # if len(o_safe[i]) != self.d.get_size(): 
+                    if i == 0: # High card
+                        if self.pair_one or self.trips or self.quads or self.best_hand[0] > 0: # hand superceded
+                            self.outs[i] = '--'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif max(self.ranks_u) == 14:
+                            self.outs[i] = 'Ace High'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        else:
+                            self.outs[i] = o_hit[i]
+                            self.o_len[i] = len(self.outs[i]) 
+                            self.chances[i] = round((self.o_len[i] / self.d.get_size() * 100),2)
+                    if i == 1: # Pair
+                        if self.pair_two or self.trips or self.quads or self.best_hand[0] > 1: # hand superceded
+                            self.outs[i] = '--'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif self.pair_one:
+                            self.outs[i] = 'Made'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        else:
+                            self.outs[i] = o_safe[i]
+                            self.o_len[i] = len(self.outs[i]) 
+                            self.chances[i] = round((self.o_len[i] / self.d.get_size() * 100),2)
+                    if i == 2: # Two Pair
+                        if self.trips or self.quads or self.best_hand[0] > 2: # hand superceded
+                            self.outs[i] = '--'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif self.pair_two:
+                            self.outs[i] = 'Made'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif o_safe[i] == []:
+                            self.outs[i] = '..'
+                            self.chances[i] = '..'
+                            self.o_len[i] = '..'
+                        else:
+                            self.outs[i] = o_safe[i]
+                            self.o_len[i] = len(self.outs[i]) 
+                            self.chances[i] = round((self.o_len[i] / self.d.get_size() * 100),2)
+                    if i == 3: # Trips
+                        if self.quads or self.best_hand[0] > 3: # hand superceded
+                            self.outs[i] = '--'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif self.trips:
+                            self.outs[i] = 'Made'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif o_safe[i] == []:
+                            self.outs[i] = '..'
+                            self.chances[i] = '..'
+                            self.o_len[i] = '..'
+                        else:
+                            self.outs[i] = o_safe[i]
+                            self.o_len[i] = len(self.outs[i]) 
+                            self.chances[i] = round((self.o_len[i] / self.d.get_size() * 100),2)
+                    if i == 4: # Straight
+                        if self.quads or self.best_hand[0] > 4: # hand superceded
+                            self.outs[i] = '--'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif self.best_hand[0] == 4:
+                            self.outs[i] = 'Made'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif o_safe[i] == []:
+                            self.outs[i] = '..'
+                            self.chances[i] = '..'
+                            self.o_len[i] = '..'
+                        else:
+                            self.outs[i] = o_safe[i]
+                            self.o_len[i] = len(self.outs[i]) 
+                            self.chances[i] = round((self.o_len[i] / self.d.get_size() * 100),2)
+                    if i == 5: # Flush
+                        if self.quads or self.best_hand[0] > 5: # hand superceded
+                            self.outs[i] = '--'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif self.best_hand[0] == 5:
+                            self.outs[i] = 'Made'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif o_safe[i] == []:
+                            self.outs[i] = '..'
+                            self.chances[i] = '..'
+                            self.o_len[i] = '..'
+                        else:
+                            self.outs[i] = o_safe[i]
+                            self.o_len[i] = len(self.outs[i]) 
+                            self.chances[i] = round((self.o_len[i] / self.d.get_size() * 100),2)
+                    if i == 6: # Full House
+                        if self.quads or self.best_hand[0] > 6: # hand superceded
+                            self.outs[i] = '--'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif self.best_hand[0] == 6:
+                            self.outs[i] = 'Made'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif o_safe[i] == []:
+                            self.outs[i] = '..'
+                            self.chances[i] = '..'
+                            self.o_len[i] = '..'
+                        else:
+                            self.outs[i] = o_safe[i]
+                            self.o_len[i] = len(self.outs[i]) 
+                            self.chances[i] = round((self.o_len[i] / self.d.get_size() * 100),2)
+                    if i == 7: # Quads
+                        if self.best_hand[0] > 7: # hand superceded
+                            self.outs[i] = '--'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif self.quads:
+                            self.outs[i] = 'Made'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif o_safe[i] == []:
+                            self.outs[i] = '..'
+                            self.chances[i] = '..'
+                            self.o_len[i] = '..'
+                        else:
+                            self.outs[i] = o_safe[i]
+                            self.o_len[i] = len(self.outs[i]) 
+                            self.chances[i] = round((self.o_len[i] / self.d.get_size() * 100),2)
+                    if i == 8: # Straight Flush
+                        if self.best_hand[0] > 8: # hand superceded
+                            self.outs[i] = '--'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif self.best_hand[0] == 8:
+                            self.outs[i] = 'Made'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif o_safe[i] == []:
+                            self.outs[i] = '..'
+                            self.chances[i] = '..'
+                            self.o_len[i] = '..'
+                        else:
+                            self.outs[i] = o_safe[i]
+                            self.o_len[i] = len(self.outs[i]) 
+                            self.chances[i] = round((self.o_len[i] / self.d.get_size() * 100),2)
+                    if i == 9: # Royal Flush
+                        if self.best_hand[0] == 9: # hand made
+                            self.outs[i] = 'Made'
+                            self.chances[i] = '--'
+                            self.o_len[i] = '--'
+                        elif o_safe[i] == []:
+                            self.outs[i] = '..'
+                            self.chances[i] = '..'
+                            self.o_len[i] = '..'
+                        else:
+                            self.outs[i] = o_safe[i]
+                            self.o_len[i] = len(self.outs[i]) 
+                            self.chances[i] = round((self.o_len[i] / self.d.get_size() * 100),2)
     def update_chances(self):
         # print('Chances for hand: ' + str(self.h) + ' with ' + str(self.d.get_size()) + ' cards remaining in deck')
         # print('*** SAFE ***')
@@ -80,18 +218,15 @@ class Odds():
                         self.outs_hit[i].append(self.d.get_deck()[j])
             elif i == 1: # Pair
                 if self.pair_one or self.pair_two or self.trips or self.quads:
-                    # already hit
-                    pass
-                elif len(self.h) <= 6:
-                    # pair up any card in hand
+                    pass # already hit
+                elif len(self.h) <= 6: # pair up any card in hand
                     for j in range(len(self.ranks)):
                         for k in range(self.d.get_size()):
                             if self.ranks[j] == self.d.get_deck()[k][0]:
                                 self.outs_hit[i].append(self.d.get_deck()[k])
             elif i == 2: # Two pair
                 if self.pair_two or self.trips or self.quads:
-                    # already hit
-                    pass
+                    pass # already hit
                 elif len(self.h) <= 6 and self.pair_one:
                     for j in range(len(self.ranks)):
                         for k in range(self.d.get_size()):
@@ -99,17 +234,14 @@ class Odds():
                                 self.outs_hit[i].append(self.d.get_deck()[k])
             elif i == 3: # Trips
                 if self.trips or self.quads:
-                    # already hit
-                    pass
-                elif self.pair_one or self.pair_two: 
-                    # get trip on current pair (note that two pair actually gets overridden by FH...)
+                    pass # already hit
+                elif self.pair_one or self.pair_two: # get trip on current pair (note that two pair will get overridden by FH...)
                     for j in range(self.d.get_size()):
                             if self.d.get_deck()[j][0] == self.pair_compare or self.d.get_deck()[j][0] == self.pair_compare_two:
                                 self.outs_hit[i].append(self.d.get_deck()[j])
             elif i == 4: # Straight
                 if len (self.h) == 6 and len(self.ranks_u) >= 4:
-                    gap = 1
-                    scale = [1,2,3,4,5,6,7,8,9,10]
+                    gap, scale = 1, [1,2,3,4,5,6,7,8,9,10]
                     for j in range(len(scale)):
                         sc_min = scale[j]
                         sc_max = scale[j] + 4
@@ -132,9 +264,8 @@ class Odds():
                     s_count = count_suits(self.h) # returns count in form [H,D,C,S]
                     s_max = max(s_count)
                     if s_max == 4:
-                        for j in range(len(s_count)):
+                        for j in range(len(s_count)): # Flush draw
                             if s_count[j] == 4:
-                                # Flush draw
                                 if j == 0: # H
                                     for card in self.d.get_deck():
                                         if card[1] == 'H':
@@ -152,7 +283,7 @@ class Odds():
                                             if card[1] == 'S':
                                                 self.outs_hit[i].append(card)
             elif i == 6: # Full House
-                if not self.quads and len(self.h) >= 4 and (self.pair_two or self.trips):
+                if not self.quads and len(self.h) >= 4 and (self.pair_two or self.trips): # if not already hit or exceeded
                     # Match either pair, or single card with trips
                     if self.pair_two or self.pair_three:
                         for card in self.d.get_deck():
@@ -172,6 +303,7 @@ class Odds():
                             if self.trip_compare == card[0]:
                                 self.outs_hit[i].append(card)
             elif i == 8: # Straight Flush
+                # find intersection of straight and flush outs
                 s_outs = self.outs_hit[4][:]
                 f_outs = self.outs_hit[5][:]
                 for s_out in s_outs:
@@ -191,7 +323,7 @@ class Odds():
                                 h_royals[2].append(card)
                             elif card[1] == 'S':
                                 h_royals[3].append(card)
-                    s = ''
+                    s = 'x'
                     for j in range(len(h_royals)):
                         if len(h_royals[j]) == 4:
                             if j == 0:
@@ -202,11 +334,11 @@ class Odds():
                                 s = 'C'
                             elif j == 3:
                                 s = 'S'    
-                    if s != '':
+                    if s != 'x':
                         for card in self.d.get_deck():
                             if card[0] >= 10 and card[1] == s:
                                 self.outs_hit[i].append(card)
-    def update_outs_safe(self): # create a list of cards that would improve a hand for a given hand ranking 0 to 9 (high card to royal flush)
+    def update_outs_safe(self): # create a list of cards that would IMPROVE or NOT PREVENT a given hand ranking 0 to 9 (high card to royal flush)
         self.outs_safe = [[],[],[],[],[],[],[],[],[],[]]
         for i in range(len(self.outs_safe)):
             if i == 0: # High card
@@ -317,7 +449,6 @@ class Odds():
                     elif len(self.h) == 6:
                         self.outs_safe[i] = self.outs_hit[i]
                     else: # 4 or 5 cards in hand, with 4 unique ranks.  Match any card
-                        print('FH CARD MATCHING!!')
                         for r in self.ranks_u:
                             for card in self.d.get_deck():
                                 if r == card[0]:
@@ -369,7 +500,6 @@ class Odds():
                         elif card[1] == 'S':
                             h_royals[3].append(card)
                 remaining_H, remaining_D, remaining_C, remaining_S = 5 - len(h_royals[0]), 5 - len(h_royals[1]), 5 - len(h_royals[2]), 5 - len(h_royals[3])     # count royals remaining in deck by suit
-                # print(f'draws_left: {}, remaining_H: {}, remaining_D: {}, ')
                 if draws_left > remaining_H or draws_left > remaining_D or draws_left > remaining_C or draws_left > remaining_S:
                     self.outs_safe[i] = self.d.get_deck()
                 elif draws_left == 1:
@@ -405,20 +535,10 @@ class Odds():
     def get_outs(self):
         return self.outs
     def count_dups(self): 
-        self.quads = False
-        self.trips = False
-        self.pair_one = False
-        self.pair_two = False
-        self.pair_three = False # 3 pairs possible with 7 cards. Required for outs to hit FH.
-        self.pair_compare = 0
-        self.pair_compare_two = 0
-        self.pair_compare_three = 0
-        self.trip_compare = 0
-        # self.two_pair_compare = [0,0]
-        # quad_compare = []
-        # fh_compare = [0,0]
+        self.quads = self.trips = self.pair_one = self.pair_two = self.pair_three = False # 3 pairs possible with 7 cards. Required for outs to hit FH.
+        self.pair_compare = self.pair_compare_two = self.pair_compare_three = self.trip_compare = 0
         count = []
-        # count duplicate cards
+        # count duplicate cards for each unique rank
         for i in range(len(self.ranks_u)): 
             c = 0
             for j in range(len(self.ranks)):
@@ -429,25 +549,77 @@ class Odds():
         for i in range(len(count)):
             if count[i] == 4:
                 self.quads = True
-                # quad_compare = self.ranks_u[i]
             elif count[i] == 3:
                 self.trips = True
-                # fh_compare[0] = self.ranks_u[i]
                 self.trip_compare = self.ranks_u[i]
             elif count[i] == 2 and not self.pair_one:
                 self.pair_one = True
                 self.pair_compare = self.ranks_u[i]
-                # fh_compare[1] = self.ranks_u[i]
             elif count[i] == 2 and self.pair_one and not self.pair_two:
                 self.pair_two = True
                 self.pair_compare_two = self.ranks_u[i]
-                # self.two_pair_compare[0] = self.pair_compare
-                # self.two_pair_compare[1] = self.ranks_u[i]
             elif count[i] == 2 and self.pair_one and self.pair_two:
                 self.pair_three = True
                 self.pair_compare_three = self.ranks_u[i]
-                # update self.two_pair_compare if ever used!
-    def print_outs(self):
+    def print_info(self):
+        if len(self.h) >= 5:
+            print(f'Best Hand: {interpret_eval(self.best_hand)}')
+        print(f'{len(self.h)} cards drawn: {self.h}, {self.d.get_size()} remaining in deck')
+        # [no. cards][% chance]  Hand: XXXX
+        print(f'[##][%%]')
+        for i in range(len(self.outs)):
+            o = f'[{self.o_len[i]}][{self.chances[i]}%]'
+            if i == 0:
+                if self.o_len[i] == len(self.d.get_deck()):
+                    print(o + f'      High Card: All')
+                else:
+                    print(o + f'      High Card: {self.outs[i]}')
+            if i == 1:
+                if self.o_len[i] == len(self.d.get_deck()):
+                    print(o + f'           Pair: All')
+                else:
+                    print(o + f'           Pair: {self.outs[i]}')
+            if i == 2:
+                if self.o_len[i] == len(self.d.get_deck()):
+                    print(o + f'         2 Pair: All')
+                else:
+                    print(o + f'         2 Pair: {self.outs[i]}')
+            if i == 3:
+                if self.o_len[i] == len(self.d.get_deck()):
+                    print(o + f'    3 of a Kind: All')
+                else:
+                    print(o + f'    3 of a Kind: {self.outs[i]}')
+            if i == 4:
+                if len(self.outs[i]) == len(self.d.get_deck()):
+                    print(o + f'       Straight: All')
+                else:
+                    print(o + f'       Straight: {self.outs[i]}')
+            if i == 5:
+                if len(self.outs[i]) == len(self.d.get_deck()):
+                    print(o + f'          Flush: All')
+                else:
+                    print(o + f'          Flush: {self.outs[i]}')
+            if i == 6:
+                if len(self.outs[i]) == len(self.d.get_deck()):
+                    print(o + f'     Full House: All')
+                else:
+                    print(o + f'     Full House: {self.outs[i]}')
+            if i == 7:
+                if len(self.outs[i]) == len(self.d.get_deck()):
+                    print(o + f'    4 of a Kind: All')
+                else:
+                    print(o + f'    4 of a Kind: {self.outs[i]}')
+            if i == 8:
+                if len(self.outs[i]) == len(self.d.get_deck()):
+                    print(o + f' Straight Flush: All')
+                else:
+                    print(o + f' Straight Flush: {self.outs[i]}')
+            if i == 9:
+                if len(self.outs[i]) == len(self.d.get_deck()):
+                    print(o + f'    Royal Flush: All')
+                else:
+                    print(o + f'    Royal Flush: {self.outs[i]}')
+    def print_outs_SH(self):
         print('***   SAFE   ***')
         for i in range(len(self.outs_safe)):
             if i == 0:
@@ -554,7 +726,7 @@ class Odds():
                     print('   Royal Flush: ' + str(self.outs_hit[i]))
 
 # returns list of number of suits [H,D,C,S] for a given list of cards.
-# counting outs for Flush depends on this function.  Take care if altering!  
+# counting outs for Flush depends on this function.  
 def count_suits(H):
     h = H[:]
     suits = [0,0,0,0]
@@ -567,14 +739,11 @@ def count_suits(H):
             suits[2] += 1
         if card[1] == 'S':
             suits[3] += 1
-    # print(f'count_suits HDCS: {suits}')
     return suits
-
 
 # Evaluates a five card hand
 # Takes list of ranks & suits [[r,s],[r,s],[r,s],[r,s],[r,s]]
 # Returns evaluation code [hand_ranking, same_hand_comparison, kickers]
-# Need to update to compare value of same hands
 def evaluate_hand(hand):
     if not (len(hand) == 5):
         print('ERROR EVALUATING HAND for hand: ' + str(hand))

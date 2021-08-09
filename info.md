@@ -1,6 +1,6 @@
 ## Description
 * Work In Progress!
-* Deals 5 cards from a deck one by one, and calculates the chances of hitting a poker hand.  Includes lists of cards to stay safe or to hit a given hand.
+* Deals 7 cards from a deck one by one, and calculates the chances of hitting a poker hand.  Includes lists of cards to stay safe or to hit a given hand.
 
 ## To do
 * Combine / clean up output
