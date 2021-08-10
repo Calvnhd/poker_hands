@@ -17,7 +17,7 @@ while not done:
         h.append(d.take_card())
         o.update(h,d)
         
-        if len(h) != 7:
+        if len(h) <= 7:
             print('*********************************************************************')
             # print('hand: ' + str(h))
             # print(f'safe: {o.get_chances_safe()}')
